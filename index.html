@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GTD Quick Capture</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f5f4f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e5e3dd;
+    padding: 1.75rem;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .card-header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a1a;
+    letter-spacing: -0.01em;
+  }
+
+  .notion-dot {
+    width: 22px;
+    height: 22px;
+    background: #1a1a1a;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .notion-dot svg { width: 13px; height: 13px; fill: white; }
+
+  .field { margin-bottom: 12px; }
+
+  .field-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #999;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 14px;
+    border: 1px solid #e5e3dd;
+    border-radius: 8px;
+    background: #faf9f7;
+    color: #1a1a1a;
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: inherit;
+  }
+
+  input[type="text"]:focus { border-color: #aaa; background: #fff; }
+  input[type="text"]::placeholder { color: #bbb; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .ac-wrap { position: relative; }
+
+  .ac-list {
+    display: none;
+    position: absolute;
+    top: calc(100% + 3px);
+    left: 0; right: 0;
+    background: #fff;
+    border: 1px solid #e5e3dd;
+    border-radius: 8px;
+    z-index: 100;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+
+  .ac-item {
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #1a1a1a;
+  }
+
+  .ac-item:hover, .ac-item.sel { background: #f5f4f0; }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #f0ede8;
+    margin: 16px 0;
+  }
+
+  #add-btn {
+    width: 100%;
+    padding: 11px;
+    background: #1a1a1a;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, transform 0.1s;
+    margin-top: 4px;
+  }
+
+  #add-btn:hover { background: #333; }
+  #add-btn:active { transform: scale(0.99); }
+  #add-btn:disabled { background: #ccc; cursor: default; }
+
+  #status {
+    margin-top: 10px;
+    font-size: 13px;
+    text-align: center;
+    min-height: 18px;
+    color: #888;
+  }
+
+  #status.error { color: #c0392b; }
+  #status.success { color: #27ae60; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1a1a1a;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="card-header">
+    <div class="notion-dot">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z"/></svg>
+    </div>
+    <h1>GTD Quick Capture</h1>
+  </div>
+
+  <div class="field">
+    <div class="field-label">Action</div>
+    <input type="text" id="action" placeholder="What's the next action?" />
+  </div>
+
+  <div class="grid-2">
+    <div class="field">
+      <div class="field-label">Type</div>
+      <div class="ac-wrap">
+        <input type="text" id="type" placeholder="Next Action…" autocomplete="off" />
+        <div class="ac-list" id="list-type"></div>
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">Area</div>
+      <div class="ac-wrap">
+        <input type="text" id="area" placeholder="Axon…" autocomplete="off" />
+        <div class="ac-list" id="list-area"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="next-action-fields">
+    <div class="grid-2">
+      <div class="field">
+        <div class="field-label">Context</div>
+        <div class="ac-wrap">
+          <input type="text" id="context" placeholder="@computer…" autocomplete="off" />
+          <div class="ac-list" id="list-context"></div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">Time</div>
+        <div class="ac-wrap">
+          <input type="text" id="time" placeholder="30 Mins…" autocomplete="off" />
+          <div class="ac-list" id="list-time"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="waiting-fields" style="display:none;">
+    <div class="grid-2">
+      <div class="field">
+        <div class="field-label">Person</div>
+        <input type="text" id="person" placeholder="Waiting on…" />
+      </div>
+      <div class="field">
+        <div class="field-label">Follow up</div>
+        <div class="ac-wrap">
+          <input type="text" id="when" placeholder="This Week…" autocomplete="off" />
+          <div class="ac-list" id="list-when"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="field">
+    <div class="field-label">Project</div>
+    <input type="text" id="project" placeholder="Optional" />
+  </div>
+
+  <hr class="divider" />
+
+  <button id="add-btn" onclick="handleAdd()">Add to Notion</button>
+  <div id="status"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const OPTIONS = {
+  type: ['Next Action', 'Waiting For'],
+  area: ['Axon', 'Personal', 'Torque Capital'],
+  context: ['@computer', '@phone', '@slack'],
+  time: ['5 Mins', '30 Mins', 'Deep Work'],
+  when: ['Today', 'Tomorrow', 'This Week', 'This Month', 'Someday']
+};
+
+function setupAC(inputId) {
+  const input = document.getElementById(inputId);
+  const list = document.getElementById('list-' + inputId);
+  if (!list) return;
+  const opts = OPTIONS[inputId];
+  let idx = -1;
+
+  function render(filtered) {
+    list.innerHTML = '';
+    if (!filtered.length) { list.style.display = 'none'; return; }
+    filtered.forEach((o, i) => {
+      const d = document.createElement('div');
+      d.className = 'ac-item';
+      d.textContent = o;
+      d.onmousedown = () => {
+        input.value = o;
+        list.style.display = 'none';
+        if (inputId === 'type') updateTypeFields();
+      };
+      list.appendChild(d);
+    });
+    list.style.display = 'block';
+    idx = -1;
+  }
+
+  input.addEventListener('focus', () => render(opts));
+  input.addEventListener('input', () => {
+    const v = input.value.toLowerCase();
+    render(opts.filter(o => o.toLowerCase().includes(v)));
+    if (inputId === 'type') updateTypeFields();
+  });
+  input.addEventListener('blur', () => setTimeout(() => list.style.display = 'none', 150));
+  input.addEventListener('keydown', e => {
+    const items = list.querySelectorAll('.ac-item');
+    if (e.key === 'ArrowDown') { idx = Math.min(idx+1, items.length-1); items.forEach((el,i) => el.classList.toggle('sel', i===idx)); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { idx = Math.max(idx-1, 0); items.forEach((el,i) => el.classList.toggle('sel', i===idx)); e.preventDefault(); }
+    else if (e.key === 'Enter' && idx >= 0) { input.value = items[idx].textContent; list.style.display = 'none'; if (inputId === 'type') updateTypeFields(); }
+    else if (e.key === 'Escape') list.style.display = 'none';
+  });
+}
+
+function updateTypeFields() {
+  const isWaiting = document.getElementById('type').value === 'Waiting For';
+  document.getElementById('next-action-fields').style.display = isWaiting ? 'none' : 'block';
+  document.getElementById('waiting-fields').style.display = isWaiting ? 'block' : 'none';
+}
+
+['type','area','context','time','when'].forEach(setupAC);
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function resetForm() {
+  ['action','type','area','context','time','person','when','project'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('next-action-fields').style.display = 'block';
+  document.getElementById('waiting-fields').style.display = 'none';
+  document.getElementById('status').textContent = '';
+  document.getElementById('status').className = '';
+}
+
+async function handleAdd() {
+  const action = document.getElementById('action').value.trim();
+  const type = document.getElementById('type').value.trim();
+  const area = document.getElementById('area').value.trim();
+  const context = document.getElementById('context').value.trim();
+  const time = document.getElementById('time').value.trim();
+  const person = document.getElementById('person').value.trim();
+  const when = document.getElementById('when').value.trim();
+  const project = document.getElementById('project').value.trim();
+  const status = document.getElementById('status');
+  const btn = document.getElementById('add-btn');
+
+  if (!action) { status.textContent = 'Please enter an action.'; status.className = 'error'; return; }
+  if (!type) { status.textContent = 'Please select a type.'; status.className = 'error'; return; }
+
+  const props = { Action: action, Type: type };
+  if (area) props.Area = area;
+  if (project) props.Project = project;
+  if (type === 'Next Action') {
+    if (context) props.Context = context;
+    if (time) props.Time = time;
+  } else {
+    if (person) props.Person = person;
+    if (when) props.When = when;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Adding…';
+  status.textContent = '';
+  status.className = '';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        mcp_servers: [{ type: 'url', url: 'https://mcp.notion.com/mcp', name: 'notion' }],
+        system: 'You add items to a Notion database. The data_source_id is 376aa4b7-9be2-800e-a18c-000b0ae68e0b. Use notion-create-pages to add the item and reply only with "done".',
+        messages: [{ role: 'user', content: 'Add this item: ' + JSON.stringify(props) }]
+      })
+    });
+
+    if (res.ok) {
+      showToast('Added to Notion');
+      resetForm();
+    } else {
+      const err = await res.json();
+      status.textContent = err.error?.message || 'Error — try again.';
+      status.className = 'error';
+    }
+  } catch(e) {
+    status.textContent = 'Network error: ' + e.message;
+    status.className = 'error';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Add to Notion';
+}
+</script>
+</body>
+</html>
