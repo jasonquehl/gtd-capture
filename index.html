@@ -242,6 +242,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
+const WORKER_URL = 'https://gtd-proxy.jason-quehl.workers.dev';
+
 const OPTIONS = {
   type: ['Next Action', 'Waiting For'],
   area: ['Axon', 'Personal', 'Torque Capital'],
@@ -260,7 +262,7 @@ function setupAC(inputId) {
   function render(filtered) {
     list.innerHTML = '';
     if (!filtered.length) { list.style.display = 'none'; return; }
-    filtered.forEach((o, i) => {
+    filtered.forEach((o) => {
       const d = document.createElement('div');
       d.className = 'ac-item';
       d.textContent = o;
@@ -332,15 +334,15 @@ async function handleAdd() {
   if (!action) { status.textContent = 'Please enter an action.'; status.className = 'error'; return; }
   if (!type) { status.textContent = 'Please select a type.'; status.className = 'error'; return; }
 
-  const props = { Action: action, Type: type };
-  if (area) props.Area = area;
-  if (project) props.Project = project;
+  const payload = { Action: action, Type: type };
+  if (area) payload.Area = area;
+  if (project) payload.Project = project;
   if (type === 'Next Action') {
-    if (context) props.Context = context;
-    if (time) props.Time = time;
+    if (context) payload.Context = context;
+    if (time) payload.Time = time;
   } else {
-    if (person) props.Person = person;
-    if (when) props.When = when;
+    if (person) payload.Person = person;
+    if (when) payload.When = when;
   }
 
   btn.disabled = true;
@@ -349,24 +351,18 @@ async function handleAdd() {
   status.className = '';
 
   try {
-    const res = await fetch('https://gtd-proxy.jason-quehl.workers.dev', {
+    const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        mcp_servers: [{ type: 'url', url: 'https://mcp.notion.com/mcp', name: 'notion' }],
-        system: 'You add items to a Notion database. The data_source_id is 376aa4b7-9be2-800e-a18c-000b0ae68e0b. Use notion-create-pages to add the item and reply only with "done".',
-        messages: [{ role: 'user', content: 'Add this item: ' + JSON.stringify(props) }]
-      })
+      body: JSON.stringify(payload),
     });
 
     if (res.ok) {
-      showToast('Added to Notion');
+      showToast('✓ Added to Notion');
       resetForm();
     } else {
       const err = await res.json();
-      status.textContent = err.error?.message || 'Error — try again.';
+      status.textContent = err.message || 'Error — try again.';
       status.className = 'error';
     }
   } catch(e) {
